@@ -22,7 +22,7 @@ issueTrackerURL="https://github.com/rathmerdominik/player-revive-compat/issues/"
 	side = "SERVER"
 
 [[dependencies.playerrevive]]
-	modId="mineminenomi"
+	modId="playerrevive"
 	mandatory=true
 	versionRange="[2.0.0,)"
 	ordering="AFTER"
