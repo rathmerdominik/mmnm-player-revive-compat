@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+issueTrackerURL="https://github.com/rathmerdominik/player-revive-compat/issues/"
+
+[[mods]]
+	modId="${mod_id}"
+	version="${mod_version}"
+	displayName="${mod_name}"
+	displayURL="https://github.com/rathmerdominik/player-revive-compat/"
+	logoFile="mmnmrevive.png"
+	credits="DerHammerclock"
+	authors="${mod_authors}"
+	description='''${mod_description}'''
+
+[[dependencies.mineminenomi]] 
+	modId = "mineminenomi"
+	mandatory = true
+	versionRange = "[0.9.5,)"
+	ordering = "AFTER"
+	side = "SERVER"
+
+[[dependencies.playerrevive]]
+	modId="mineminenomi"
+	mandatory=true
+	versionRange="[2.0.0,)"
+	ordering="AFTER"
+	side="SERVER"
