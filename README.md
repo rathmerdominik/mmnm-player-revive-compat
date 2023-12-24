@@ -1,5 +1,5 @@
 <p align="center">
-	<img src="src/main/resources/mmnmrevive.png" height="500" width="500">
+	<img src="https://raw.githubusercontent.com/rathmerdominik/player-revive-compat/main/src/main/resources/mmnmrevive.png" height="500" width="500">
 </p>
 
 <h1 align="center">Player Revive Compatibility</h1>
