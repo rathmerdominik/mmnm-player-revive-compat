@@ -1,5 +1,7 @@
 package net.hammerclock.mmnmrevive;
 
+import net.hammerclock.mmnmrevive.events.PlayerReviveCompatEvent;
+
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fml.ModList;
@@ -29,6 +31,7 @@ public class PlayerReviveCompatMod
 			() -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (a, b) -> true));
 
 		MinecraftForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(new PlayerReviveCompatEvent());
 
 		MinecraftForge.EVENT_BUS.addListener(PlayerReviveCompatMod::onServerStarted);
 	}
