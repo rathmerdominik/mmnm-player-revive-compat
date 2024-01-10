@@ -140,6 +140,13 @@ def updateChangelog(changelogMessage, changelogType, versionType, latestVersion,
                             changelogType.toUpperCase() == 'MAJOR' ? 1 : 0
 
     def newVersion = latestVersion.split("\\.").collect { it as Integer }
+
+    if(versionIncrement == 2) {
+        newVersion[2] = 0
+    } else if (versionIncrement == 1) {
+        newVersion[1] = 0
+        newVersion[2] = 0
+    }
     newVersion[versionIncrement - 1] += 1
     newVersion = newVersion.collect { it.toString() }.join(".")
 
