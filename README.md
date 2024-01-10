@@ -13,3 +13,9 @@
 <p align="center">
 While bleeding out players get their abilities disabled. When being revived or they finally bleed out the abilities are restored.
 </p>
+<p align="center">
+When using the Straw doll from the Wara Wara no Mi the doll will be removed when the opposing player has been downed by it.
+</p>
+<p align="center">
+When using the Heart from the MES ability it will instantly kill the player that belongs to the heart instead of downing them.
+</p>
