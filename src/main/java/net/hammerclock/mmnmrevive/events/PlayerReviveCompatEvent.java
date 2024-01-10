@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import team.creative.playerrevive.api.event.PlayerBleedOutEvent;
 import team.creative.playerrevive.api.event.PlayerRevivedEvent;
-
+import team.creative.playerrevive.server.PlayerReviveServer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,8 +48,7 @@ public class PlayerReviveCompatEvent {
 			LOGGER.debug("Logging entity of deathcause of player: {}", deathCause.getEntity());
 
 			if(deathCause.getMsgId().equals("heart_damage")) {
-				event.setCanceled(false);
-				event.setResult(Result.DENY);
+				PlayerReviveServer.kill(player);
 			}
 
 			if(deathCause.getEntity() instanceof ServerPlayerEntity && !deadPlayerEntityStats.hasStrawDoll()) {
