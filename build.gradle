@@ -24,11 +24,15 @@ println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty '
 
 minecraft {
     mappings channel: mapping_channel, version: mapping_version
+
     copyIdeResources = true
+
     runs {
         configureEach {
             workingDirectory project.file('run')
+
             property 'forge.logging.markers', 'REGISTRIES'
+
             property 'forge.logging.console.level', 'debug'
 
             mods {
@@ -39,17 +43,26 @@ minecraft {
         }
 
         client {
-            // this block needs to be here for runClient to exist
+            workingDirectory project.file('run/client')
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+        }
+
+        client2 {
+            parent runs.client
+            args '--username', 'Dev3'
         }
 
         server {
+            workingDirectory project.file('run/server')
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             args '--nogui'
         }
 
         data {
             workingDirectory project.file('run-data')
 
-            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
             args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
         }
     }
@@ -66,8 +79,9 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    implementation files('libs/mine-mine-no-mi-1.16.5-0.9.5.jar')
-    implementation files('libs/PlayerRevive_v2.0.0-pre04_mc1.16.5.jar')
+    implementation fg.deobf('xyz.pixelatedw:mine-mine-no-mi:1.16.5-0.9.5')
+    implementation fg.deobf('team.creative:player-revive:1.16.5')
+    implementation fg.deobf('team.creative:creative-core:1.16.5')
 }
 
 tasks.named('processResources', ProcessResources).configure {
@@ -147,6 +161,7 @@ def updateChangelog(changelogMessage, changelogType, versionType, latestVersion,
         newVersion[1] = 0
         newVersion[2] = 0
     }
+
     newVersion[versionIncrement - 1] += 1
     newVersion = newVersion.collect { it.toString() }.join(".")
 
