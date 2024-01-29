@@ -32,17 +32,17 @@ jobs:
     - name: Extract tag information
       id: tag_info
       run: |
-        TAG_NAME=${GITHUB_REF#refs/tags/}
         TAG_INFO=($(echo $GITHUB_REF | sed 's|refs/tags/||' | tr '-' ' '))
         echo "VERSION_TYPE=${TAG_INFO[2]}" >> $GITHUB_ENV
-        echo "CHANGELOG_MESSAGE=${TAG_INFO[@]:2}" >> $GITHUB_ENV
         echo "CHANGELOG_TYPE=${TAG_INFO[1]}" >> $GITHUB_ENV
-    
+
+        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+        echo "CHANGELOG_MESSAGE=$(git tag -l --format='%(contents:subject)' ${GITHUB_REF#refs/*/})" >> $GITHUB_ENV
+
     - name: Get dependencies
       run: |
         cd libs
-        curl -LO https://mediafilez.forgecdn.net/files/3419/960/PlayerRevive_v2.0.0-pre04_mc1.16.5.jar
-        curl -LO https://cdn.modrinth.com/data/AWGqBEjs/versions/6bYJl4jj/mine-mine-no-mi-1.16.5-0.9.5.jar
+        curl -LO https://github.com/rathmerdominik/mine-mine-no-mi-modded/raw/main/release/mine-mine-no-mi-1.16.5-0.9.5-HAMMER.jar
         cd ..
 
     - name: Run ./gradlew updateInformation
@@ -52,7 +52,7 @@ jobs:
         VERSION_TYPE: ${{ env.VERSION_TYPE }}
         CHANGELOG_MESSAGE: ${{ env.CHANGELOG_MESSAGE }}
         CHANGELOG_TYPE: ${{ env.CHANGELOG_TYPE }}
-      
+
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
         branch: main
