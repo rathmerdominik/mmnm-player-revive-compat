@@ -19,11 +19,13 @@ import net.minecraft.particles.ParticleTypes;
 import net.minecraft.potion.EffectInstance;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.server.ServerWorld;
+import net.minecraftforge.common.ForgeConfig.Server;
 import net.minecraftforge.event.TickEvent.PlayerTickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import xyz.pixelatedw.mineminenomi.abilities.KnockdownAbility;
+import xyz.pixelatedw.mineminenomi.api.challenges.ChallengeArena;
 import xyz.pixelatedw.mineminenomi.api.helpers.AbilityHelper;
 import xyz.pixelatedw.mineminenomi.api.helpers.SoulboundItemHelper;
 import xyz.pixelatedw.mineminenomi.data.entity.ability.AbilityDataCapability;
@@ -47,6 +49,10 @@ public class PlayerReviveCompatEvent {
 			Entity directEntity = source.getDirectEntity();
 			Entity trueEntity = source.getEntity();
 
+			if(WyHelper.isInChallengeDimension(event.getEntity().level)) {
+				PlayerReviveServer.kill(living);
+			}
+
 			LivingEntity attacker = null;
 			
 			if (directEntity instanceof LivingEntity) {
@@ -57,7 +63,6 @@ public class PlayerReviveCompatEvent {
 			}
 			LOGGER.debug("Player {} has died and is bleeding out", living.getDisplayName().getString());
 
-			IEntityStats deadPlayerEntityStats = EntityStatsCapability.get(living);
 			LOGGER.debug("Source of death was {}", source);
 			LOGGER.debug("Logging entity of deathcause of player: {}", source.getEntity());
 
@@ -84,45 +89,9 @@ public class PlayerReviveCompatEvent {
 			if (source.getMsgId().equals("heart_damage")) {
 				PlayerReviveServer.kill(living);
 			}
-
-			if (attacker instanceof ServerPlayerEntity && !deadPlayerEntityStats.hasStrawDoll()) {
-				ServerPlayerEntity deathCausePlayer = (ServerPlayerEntity) attacker.getEntity();
-				LOGGER.debug("Got the following Player as the death cause {}",
-						deathCausePlayer.getDisplayName().getString());
-				for (int i = 0; i < deathCausePlayer.inventory.items.size(); i++) {
-					ItemStack stack = deathCausePlayer.inventory.getItem(i);
-					if (stack.getItem() == ModItems.STRAW_DOLL.get()) {
-						LOGGER.info("Found a strawdoll in {} inventory!",
-								deathCausePlayer.getDisplayName().getString());
-						Pair<UUID, LivingEntity> strawDollOwner = SoulboundItemHelper.getOwner(deathCausePlayer.level,
-								stack);
-
-						if (strawDollOwner.getValue() == null) {
-							LOGGER.debug("Strawdoll has no owner. Skipping!");
-							continue;
-						}
-
-						if (strawDollOwner.getValue() != living) {
-							LOGGER.debug("Value is not a player but {}", strawDollOwner.getValue());
-							continue;
-						}
-
-						if (strawDollOwner.getValue() == living) {
-							LOGGER.debug("Strawdoll is soulbound to player!");
-							this.spawnParticles((ServerWorld) deathCausePlayer.level, deathCausePlayer.getX(),
-									deathCausePlayer.getY(), deathCausePlayer.getZ());
-							this.spawnParticles((ServerWorld) strawDollOwner.getValue().level,
-									strawDollOwner.getValue().getX(), strawDollOwner.getValue().getY(),
-									strawDollOwner.getValue().getZ());
-							LOGGER.debug("Removing straw doll from death cause player's inventory");
-							deathCausePlayer.inventory.removeItem(stack);
-							deadPlayerEntityStats.setStrawDoll(true);
-							break;
-						}
-
-					}
-
-				}
+			
+			if(attacker instanceof ServerPlayerEntity) {
+				this.handleStrawDoll(living, (ServerPlayerEntity) attacker);
 			}
 		}
 	}
@@ -150,6 +119,50 @@ public class PlayerReviveCompatEvent {
 			AbilityHelper.enableAbilities(event.getPlayer(), abl -> true);
 		}
 	}
+
+	public void handleStrawDoll(ServerPlayerEntity living, ServerPlayerEntity attacker) {
+		IEntityStats deadPlayerEntityStats = EntityStatsCapability.get(living);
+
+		if (!deadPlayerEntityStats.hasStrawDoll()) {
+			ServerPlayerEntity deathCausePlayer = (ServerPlayerEntity) attacker.getEntity();
+			LOGGER.debug("Got the following Player as the death cause {}",
+					deathCausePlayer.getDisplayName().getString());
+			for (int i = 0; i < deathCausePlayer.inventory.items.size(); i++) {
+				ItemStack stack = deathCausePlayer.inventory.getItem(i);
+				if (stack.getItem() == ModItems.STRAW_DOLL.get()) {
+					LOGGER.info("Found a strawdoll in {} inventory!",
+							deathCausePlayer.getDisplayName().getString());
+					Pair<UUID, LivingEntity> strawDollOwner = SoulboundItemHelper.getOwner(deathCausePlayer.level,
+							stack);
+
+					if (strawDollOwner.getValue() == null) {
+						LOGGER.debug("Strawdoll has no owner. Skipping!");
+						continue;
+					}
+
+					if (strawDollOwner.getValue() != living) {
+						LOGGER.debug("Value is not a player but {}", strawDollOwner.getValue());
+						continue;
+					}
+
+					if (strawDollOwner.getValue() == living) {
+						LOGGER.debug("Strawdoll is soulbound to player!");
+						this.spawnParticles((ServerWorld) deathCausePlayer.level, deathCausePlayer.getX(),
+								deathCausePlayer.getY(), deathCausePlayer.getZ());
+						this.spawnParticles((ServerWorld) strawDollOwner.getValue().level,
+								strawDollOwner.getValue().getX(), strawDollOwner.getValue().getY(),
+								strawDollOwner.getValue().getZ());
+						LOGGER.debug("Removing straw doll from death cause player's inventory");
+						deathCausePlayer.inventory.removeItem(stack);
+						deadPlayerEntityStats.setStrawDoll(true);
+						break;
+					}
+
+				}
+
+			}
+		}
+	};
 
 	private void spawnParticles(ServerWorld world, double posX, double posY, double posZ) {
 		for (int i = 0; i < 5; i++) {

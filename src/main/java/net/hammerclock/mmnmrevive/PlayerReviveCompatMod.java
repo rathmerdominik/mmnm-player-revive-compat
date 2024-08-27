@@ -22,6 +22,8 @@ public class PlayerReviveCompatMod
 {
 	private static final Logger LOGGER = LogManager.getLogger(PlayerReviveCompatMod.PROJECT_ID);
 
+	public static final String CONFIG_NAME = "mmnm-revive-compat.toml";
+
 	public static final String PROJECT_ID = "mmnmrevive";
 
 	@SuppressWarnings("java:S1118")

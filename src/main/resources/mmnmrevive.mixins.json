@@ -1,0 +1,17 @@
+{
+    "required": true,
+    "mixins": [
+        "MultiplayerAllowMixin"
+    ],
+    "package": "net.hammerclock.mmnmrevive.mixins",
+    "server": [],
+    "client": [
+        "MultiplayerAllowMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    },
+    "compatibilityLevel": "JAVA_8",
+    "minVersion": "0.8",
+    "refmap": "mmnmrevive.refmap.json"
+}

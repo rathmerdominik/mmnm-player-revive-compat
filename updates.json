@@ -1,13 +1,14 @@
 {
     "homepage": "https://modrinth.com/mod/mmnmrevive",
     "promos": {
-        "1.16.5-latest": "1.1.1",
-        "1.16.5-recommended": "1.1.1"
+        "1.16.5-latest": "1.2.0",
+        "1.16.5-recommended": "1.2.0"
     },
     "1.16.5": {
         "1.0.0": "Initial Release",
         "1.0.1": "release",
         "1.1.0": "release",
-        "1.1.1": "Fixed an issue where players were able to use their abilities again when opening the abilities interface"
+        "1.1.1": "Fixed an issue where players were able to use their abilities again when opening the abilities interface",
+        "1.2.0": "Added new config option to immediately kill players in challenge dimensions"
     }
 }
