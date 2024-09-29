@@ -86,7 +86,7 @@ dependencies {
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("curse.maven:mine-mine-no-mi-78726:5589898")
+    implementation fg.deobf("curse.maven:mine-mine-no-mi-78726:5762433")
     implementation fg.deobf('team.creative:player-revive:1.16.5')
     implementation fg.deobf('team.creative:creative-core:1.16.5')
 }
