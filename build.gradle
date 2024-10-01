@@ -74,7 +74,17 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     maven {
+        url "https://git.pixelatedw.xyz/api/packages/PixelatedW/maven"
+        credentials {
+            username piwUsername
+            password piwMavenToken
+        }
+    }
+    maven {
         url = "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
     }
     flatDir {
         dir 'libs'
@@ -89,6 +99,7 @@ dependencies {
     implementation fg.deobf("curse.maven:mine-mine-no-mi-78726:5762433")
     implementation fg.deobf('team.creative:player-revive:1.16.5')
     implementation fg.deobf('team.creative:creative-core:1.16.5')
+    implementation fg.deobf("xyz.pixelatedw.ziusudra:ziusudra:${minecraft_version}-${ziusudra_version}")
 }
 
 tasks.named('processResources', ProcessResources).configure {
@@ -177,7 +188,6 @@ def updateChangelog(changelogMessage, changelogType, versionType, latestVersion,
         json.promos."1.16.5-recommended" = newVersion
     }
     versionChangelog[newVersion] = changelogMessage
-
 
     project.ext.mod_version = newVersion
 

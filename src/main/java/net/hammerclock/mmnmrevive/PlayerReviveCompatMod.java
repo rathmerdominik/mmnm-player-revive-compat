@@ -1,16 +1,16 @@
 package net.hammerclock.mmnmrevive;
 
+import net.hammerclock.mmnmrevive.config.CommonConfig;
 import net.hammerclock.mmnmrevive.events.PlayerReviveCompatEvent;
 
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.ExtensionPoint;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.VersionChecker;
+import net.minecraftforge.fml.*;
 import net.minecraftforge.fml.VersionChecker.CheckResult;
 import net.minecraftforge.fml.VersionChecker.Status;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.network.FMLNetworkConstants;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -32,10 +32,13 @@ public class PlayerReviveCompatMod
 		ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.DISPLAYTEST,
 			() -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (a, b) -> true));
 
-		MinecraftForge.EVENT_BUS.register(this);
-		MinecraftForge.EVENT_BUS.register(new PlayerReviveCompatEvent());
+		ModLoadingContext context = ModLoadingContext.get();
 
-		MinecraftForge.EVENT_BUS.addListener(PlayerReviveCompatMod::onServerStarted);
+		context.registerConfig(ModConfig.Type.COMMON, CommonConfig.CONFIG, CONFIG_NAME);
+
+		if(FMLEnvironment.dist.isDedicatedServer()){
+			this.initServer();
+		}
 	}
 
 	private static void onServerStarted(FMLServerStartedEvent event) {
@@ -44,5 +47,10 @@ public class PlayerReviveCompatMod
 			LOGGER.warn("YOUR MOD IS OUTDATED. The latest version is {}. Please get the latest version here: {}", result.target, result.url);
 		}
 		LOGGER.info("Player Revive Compatibility Mod Started!");
+	}
+
+	private void initServer() {
+		MinecraftForge.EVENT_BUS.register(new PlayerReviveCompatEvent());
+		MinecraftForge.EVENT_BUS.addListener(PlayerReviveCompatMod::onServerStarted);
 	}
 }

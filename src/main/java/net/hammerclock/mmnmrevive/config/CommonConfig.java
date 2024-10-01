@@ -16,10 +16,10 @@ public class CommonConfig {
 	public static final CommonConfig INSTANCE;
 	public static final ForgeConfigSpec CONFIG;
 
-    private ForgeConfigSpec.BooleanValue challengeImmediateDeath;
-
-
-
+    private final ForgeConfigSpec.BooleanValue challengeImmediateDeath;
+	private final ForgeConfigSpec.BooleanValue enableStrawDollReturn;
+	private final ForgeConfigSpec.BooleanValue knockdownPreferred;
+	private final ForgeConfigSpec.BooleanValue heartInstantDeath;
 
 	static {
 		Pair<CommonConfig, ForgeConfigSpec> pair = new ForgeConfigSpec.Builder().configure(CommonConfig::new);
@@ -27,11 +27,12 @@ public class CommonConfig {
 		CONFIG = pair.getRight();
 		INSTANCE = pair.getLeft();
 
-		CommentedFileConfig file = CommentedFileConfig.builder(CONFIG_PATH)
-                                                        .sync()
-                                                        .autoreload()
-                                                        .writingMode(WritingMode.REPLACE)
-                                                        .build();
+		CommentedFileConfig file = CommentedFileConfig
+				.builder(CONFIG_PATH)
+				.sync()
+				.autoreload()
+				.writingMode(WritingMode.REPLACE)
+				.build();
 
 		file.load();
 		file.save();
@@ -40,10 +41,36 @@ public class CommonConfig {
 	}
 
     public CommonConfig(ForgeConfigSpec.Builder builder) {
-		this.challengeImmediateDeath = builder.define("Instantly kill in challenge dimensions", false);
+		this.challengeImmediateDeath = builder
+				.comment("Will restore vanilla Mine Mine no Mi behaviour by bringing you back to the surface when you die in a challenge dimension")
+				.define("Instantly kill in challenge dimensions", false);
+
+		this.enableStrawDollReturn = builder
+				.comment("Will remove the strawdoll of a player when they are downed instead of fully dead")
+				.define("Enable Straw Doll Return", true);
+
+		this.knockdownPreferred = builder
+				.comment("Will make the player be knocked down instead of dying when they are downed")
+				.define("Knockdown Preferred", true);
+
+		this.heartInstantDeath = builder
+				.comment("Will make the player die instantly when their heart is squashed instead of downing them")
+				.define("Heart Instant Death", true);
 	}
 
     public boolean isChallengeImmediateDeath() {
         return this.challengeImmediateDeath.get();
     }
+
+	public boolean isEnableStrawDollReturn() {
+		return this.enableStrawDollReturn.get();
+	}
+
+	public boolean isKnockDownPreferred() {
+		return this.knockdownPreferred.get();
+	}
+
+	public boolean isHeartDamageInstantDeath() {
+		return this.heartInstantDeath.get();
+	}
 }

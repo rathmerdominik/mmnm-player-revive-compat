@@ -2,6 +2,7 @@ package net.hammerclock.mmnmrevive.events;
 
 import java.util.UUID;
 
+import net.hammerclock.mmnmrevive.config.CommonConfig;
 import team.creative.playerrevive.api.event.PlayerBleedOutEvent;
 import team.creative.playerrevive.api.event.PlayerRevivedEvent;
 import team.creative.playerrevive.server.PlayerReviveServer;
@@ -19,13 +20,11 @@ import net.minecraft.particles.ParticleTypes;
 import net.minecraft.potion.EffectInstance;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.common.ForgeConfig.Server;
 import net.minecraftforge.event.TickEvent.PlayerTickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import xyz.pixelatedw.mineminenomi.abilities.KnockdownAbility;
-import xyz.pixelatedw.mineminenomi.api.challenges.ChallengeArena;
 import xyz.pixelatedw.mineminenomi.api.helpers.AbilityHelper;
 import xyz.pixelatedw.mineminenomi.api.helpers.SoulboundItemHelper;
 import xyz.pixelatedw.mineminenomi.data.entity.ability.AbilityDataCapability;
@@ -49,12 +48,14 @@ public class PlayerReviveCompatEvent {
 			Entity directEntity = source.getDirectEntity();
 			Entity trueEntity = source.getEntity();
 
-			if(WyHelper.isInChallengeDimension(event.getEntity().level)) {
-				PlayerReviveServer.kill(living);
+			if(CommonConfig.INSTANCE.isChallengeImmediateDeath()) {
+				if (WyHelper.isInChallengeDimension(living.level)) {
+					event.setCanceled(true);
+				}
 			}
 
 			LivingEntity attacker = null;
-			
+
 			if (directEntity instanceof LivingEntity) {
 				attacker = (LivingEntity) directEntity;
 			}
@@ -69,29 +70,35 @@ public class PlayerReviveCompatEvent {
 			if (attacker != null) {
 			IAbilityData props = AbilityDataCapability.get(attacker);
 
-			boolean isKnockdownActive = false;
-				if (props != null) {
-					KnockdownAbility abl = props.getPassiveAbility(KnockdownAbility.INSTANCE);
-					if (abl != null) {
-						isKnockdownActive = !abl.getComponent(ModAbilityKeys.PAUSE_TICK).get().isPaused();
+			if(CommonConfig.INSTANCE.isKnockDownPreferred()) {
+					boolean isKnockdownActive = false;
+					if (props != null) {
+						KnockdownAbility abl = props.getPassiveAbility(KnockdownAbility.INSTANCE);
+						if (abl != null) {
+							isKnockdownActive = !abl.getComponent(ModAbilityKeys.PAUSE_TICK).get().isPaused();
+						}
 					}
-				}
-				
-				if (isKnockdownActive) {
-					living.addEffect(new EffectInstance(ModEffects.UNCONSCIOUS.get(), 1800, 1));
-					living.setHealth(2.0f);
-					living.clearFire();
-					event.setCanceled(true);
-					return;
+
+					if (isKnockdownActive) {
+						living.addEffect(new EffectInstance(ModEffects.UNCONSCIOUS.get(), 1800, 1));
+						living.setHealth(2.0f);
+						living.clearFire();
+						event.setCanceled(true);
+						return;
+					}
 				}
 			}
 
-			if (source.getMsgId().equals("heart_damage")) {
-				PlayerReviveServer.kill(living);
+			if(CommonConfig.INSTANCE.isHeartDamageInstantDeath()) {
+				if (source.getMsgId().equals("heart_damage")) {
+					PlayerReviveServer.kill(living);
+				}
 			}
-			
-			if(attacker instanceof ServerPlayerEntity) {
-				this.handleStrawDoll(living, (ServerPlayerEntity) attacker);
+
+			if(CommonConfig.INSTANCE.isEnableStrawDollReturn()) {
+				if (attacker instanceof ServerPlayerEntity) {
+					this.handleStrawDoll(living, (ServerPlayerEntity) attacker);
+				}
 			}
 		}
 	}
@@ -130,7 +137,7 @@ public class PlayerReviveCompatEvent {
 			for (int i = 0; i < deathCausePlayer.inventory.items.size(); i++) {
 				ItemStack stack = deathCausePlayer.inventory.getItem(i);
 				if (stack.getItem() == ModItems.STRAW_DOLL.get()) {
-					LOGGER.info("Found a strawdoll in {} inventory!",
+					LOGGER.debug("Found a strawdoll in {} inventory!",
 							deathCausePlayer.getDisplayName().getString());
 					Pair<UUID, LivingEntity> strawDollOwner = SoulboundItemHelper.getOwner(deathCausePlayer.level,
 							stack);
