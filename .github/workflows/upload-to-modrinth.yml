@@ -42,7 +42,8 @@ jobs:
     - name: Get dependencies
       run: |
         cd libs
-        curl -LO https://github.com/rathmerdominik/mine-mine-no-mi-modded/raw/main/release/mine-mine-no-mi-1.16.5-0.9.5-HAMMER.jar
+        curl -Lo libs/creative-core-1.16.5.jar https://www.curseforge.com/api/v1/mods/257814/files/3419983/download
+        curl -Lo libs/player-revive-1.16.5.jar https://www.curseforge.com/api/v1/mods/266890/files/3419960/download
         cd ..
 
     - name: Run ./gradlew updateInformation
