@@ -1,3 +1,6 @@
+import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+
 plugins {
     id 'eclipse'
     id 'idea'
@@ -18,6 +21,10 @@ base {
 rootProject.ext {
     modrinthVersionType = ""
     modrinthChangelogType = ""
+}
+
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(8)
@@ -45,7 +52,9 @@ minecraft {
         }
 
         client {
+            arg "-mixin.config=${mod_id}.mixins.json"
             workingDirectory project.file('run/client')
+
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
         }
@@ -53,10 +62,15 @@ minecraft {
         client2 {
             parent runs.client
             args '--username', 'Dev3'
+            arg "-mixin.config=${mod_id}.mixins.json"
+
+            workingDirectory project.file('run/client2')
         }
 
         server {
             workingDirectory project.file('run/server')
+            arg "-mixin.config=${mod_id}.mixins.json"
+
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             args '--nogui'
@@ -73,12 +87,14 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
-
     maven {
         url = "https://www.cursemaven.com"
         content {
             includeGroup "curse.maven"
         }
+    }
+    maven {
+        url = 'https://maven.parchmentmc.org'
     }
     flatDir {
         dir 'libs'
@@ -90,7 +106,7 @@ dependencies {
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("curse.maven:mine-mine-no-mi-78726:5762433")
+    implementation fg.deobf("curse.maven:mine-mine-no-mi-78726:6049537")
     implementation fg.deobf('team.creative:player-revive:1.16.5')
     implementation fg.deobf('team.creative:creative-core:1.16.5')
 }
@@ -155,7 +171,7 @@ tasks.withType(JavaCompile).configureEach {
 
 def updateChangelog(changelogMessage, changelogType, versionType, latestVersion, updateRecommended = false) {
     def jsonFile = file('updates.json')
-    def jsonSlurper = new groovy.json.JsonSlurper()
+    def jsonSlurper = new JsonSlurper()
     def json = jsonSlurper.parse(jsonFile)
 
     def versionChangelog = json.'1.16.5'
@@ -194,7 +210,7 @@ def updateChangelog(changelogMessage, changelogType, versionType, latestVersion,
     gradleProperties.setProperty('modrinth_changelog', changelog)
     gradleProperties.store(gradlePropertiesFile.newWriter(), null)
 
-    jsonFile.text = new groovy.json.JsonBuilder(json).toPrettyString()
+    jsonFile.text = new JsonBuilder(json).toPrettyString()
 
     println "Version: " + newVersion
     println "Changelog" + changelog
@@ -222,7 +238,7 @@ tasks.register("updateInformation") {
              changelogType != null) {
 
             def jsonFile = file("updates.json")
-            def jsonSlurper = new groovy.json.JsonSlurper()
+            def jsonSlurper = new JsonSlurper()
             def json = jsonSlurper.parse(jsonFile)
             def versionChangelog = json.'1.16.5'
 

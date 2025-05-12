@@ -1,10 +1,10 @@
 {
     "required": true,
-    "mixins": [
-        "MultiplayerAllowMixin"
-    ],
+    "mixins": [],
     "package": "net.hammerclock.mmnmrevive.mixins",
-    "server": [],
+    "server": [
+        "ConfigurableBleedOutInChallengeDimensionMixin"
+    ],
     "client": [
         "MultiplayerAllowMixin"
     ],

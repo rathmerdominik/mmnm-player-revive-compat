@@ -16,7 +16,7 @@ public class CommonConfig {
 	public static final CommonConfig INSTANCE;
 	public static final ForgeConfigSpec CONFIG;
 
-    private final ForgeConfigSpec.BooleanValue challengeImmediateDeath;
+    private final ForgeConfigSpec.BooleanValue reviveAllowed;
 	private final ForgeConfigSpec.BooleanValue enableStrawDollReturn;
 	private final ForgeConfigSpec.BooleanValue knockdownPreferred;
 	private final ForgeConfigSpec.BooleanValue heartInstantDeath;
@@ -41,9 +41,9 @@ public class CommonConfig {
 	}
 
     public CommonConfig(ForgeConfigSpec.Builder builder) {
-		this.challengeImmediateDeath = builder
-				.comment("Will restore vanilla Mine Mine no Mi behaviour by bringing you back to the surface when you die in a challenge dimension")
-				.define("Instantly kill in challenge dimensions", false);
+		this.reviveAllowed = builder
+				.comment("If false will respawn you normally back into the overworld. If true will allow other players to revive their friends")
+				.define("Allow reviving in challenge dimensions ", false);
 
 		this.enableStrawDollReturn = builder
 				.comment("Will remove the strawdoll of a player when they are downed instead of fully dead")
@@ -58,8 +58,8 @@ public class CommonConfig {
 				.define("Heart Instant Death", true);
 	}
 
-    public boolean isChallengeImmediateDeath() {
-        return this.challengeImmediateDeath.get();
+    public boolean isReviveAllowed() {
+        return this.reviveAllowed.get();
     }
 
 	public boolean isEnableStrawDollReturn() {

@@ -11,7 +11,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.hammerclock.mmnmrevive.PlayerReviveCompatMod;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -20,10 +19,12 @@ import net.minecraft.particles.ParticleTypes;
 import net.minecraft.potion.EffectInstance;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.server.ServerWorld;
+
 import net.minecraftforge.event.TickEvent.PlayerTickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
 import xyz.pixelatedw.mineminenomi.abilities.KnockdownAbility;
 import xyz.pixelatedw.mineminenomi.api.helpers.AbilityHelper;
 import xyz.pixelatedw.mineminenomi.api.helpers.SoulboundItemHelper;
@@ -35,6 +36,12 @@ import xyz.pixelatedw.mineminenomi.init.ModAbilityKeys;
 import xyz.pixelatedw.mineminenomi.init.ModEffects;
 import xyz.pixelatedw.mineminenomi.init.ModItems;
 import xyz.pixelatedw.mineminenomi.wypi.WyHelper;
+
+import team.creative.playerrevive.api.event.PlayerBleedOutEvent;
+import team.creative.playerrevive.api.event.PlayerRevivedEvent;
+import team.creative.playerrevive.server.PlayerReviveServer;
+
+import net.hammerclock.mmnmrevive.PlayerReviveCompatMod;
 
 public class PlayerReviveCompatEvent {
 
@@ -48,14 +55,8 @@ public class PlayerReviveCompatEvent {
 			Entity directEntity = source.getDirectEntity();
 			Entity trueEntity = source.getEntity();
 
-			if(CommonConfig.INSTANCE.isChallengeImmediateDeath()) {
-				if (WyHelper.isInChallengeDimension(living.level)) {
-					event.setCanceled(true);
-				}
-			}
-
 			LivingEntity attacker = null;
-
+			
 			if (directEntity instanceof LivingEntity) {
 				attacker = (LivingEntity) directEntity;
 			}
@@ -63,7 +64,6 @@ public class PlayerReviveCompatEvent {
 				attacker = (LivingEntity) trueEntity;
 			}
 			LOGGER.debug("Player {} has died and is bleeding out", living.getDisplayName().getString());
-
 			LOGGER.debug("Source of death was {}", source);
 			LOGGER.debug("Logging entity of deathcause of player: {}", source.getEntity());
 
@@ -152,20 +152,18 @@ public class PlayerReviveCompatEvent {
 						continue;
 					}
 
-					if (strawDollOwner.getValue() == living) {
-						LOGGER.debug("Strawdoll is soulbound to player!");
-						this.spawnParticles((ServerWorld) deathCausePlayer.level, deathCausePlayer.getX(),
-								deathCausePlayer.getY(), deathCausePlayer.getZ());
-						this.spawnParticles((ServerWorld) strawDollOwner.getValue().level,
-								strawDollOwner.getValue().getX(), strawDollOwner.getValue().getY(),
-								strawDollOwner.getValue().getZ());
-						LOGGER.debug("Removing straw doll from death cause player's inventory");
-						deathCausePlayer.inventory.removeItem(stack);
-						deadPlayerEntityStats.setStrawDoll(true);
-						break;
-					}
+                    LOGGER.debug("Strawdoll is soulbound to player!");
+                    this.spawnParticles((ServerWorld) deathCausePlayer.level, deathCausePlayer.getX(),
+                            deathCausePlayer.getY(), deathCausePlayer.getZ());
+                    this.spawnParticles((ServerWorld) strawDollOwner.getValue().level,
+                            strawDollOwner.getValue().getX(), strawDollOwner.getValue().getY(),
+                            strawDollOwner.getValue().getZ());
+                    LOGGER.debug("Removing straw doll from death cause player's inventory");
+                    deathCausePlayer.inventory.removeItem(stack);
+                    deadPlayerEntityStats.setStrawDoll(true);
+                    break;
 
-				}
+                }
 
 			}
 		}
