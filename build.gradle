@@ -1,10 +1,16 @@
 import groovy.json.JsonBuilder
 import groovy.json.JsonSlurper
+import net.darkhax.curseforgegradle.TaskPublishCurseForge
+import net.darkhax.curseforgegradle.UploadArtifact
+import org.apache.groovy.json.internal.LazyMap
+
+import java.text.SimpleDateFormat
 
 plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
+    id 'net.darkhax.curseforgegradle' version '1.1.18'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
     id 'com.modrinth.minotaur' version '2.+'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
@@ -16,11 +22,6 @@ group = mod_group_id
 
 base {
     archivesName = mod_id
-}
-
-rootProject.ext {
-    modrinthVersionType = ""
-    modrinthChangelogType = ""
 }
 
 mixin {
@@ -38,11 +39,15 @@ minecraft {
 
     runs {
         configureEach {
-            workingDirectory project.file('run')
+            workingDirectory file('run')
 
             property 'forge.logging.markers', 'REGISTRIES'
-
             property 'forge.logging.console.level', 'debug'
+
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+
+            arg '-mixin.config=${mod_id}.mixins.json'
 
             mods {
                 "${mod_id}" {
@@ -52,32 +57,23 @@ minecraft {
         }
 
         client {
-            arg "-mixin.config=${mod_id}.mixins.json"
-            workingDirectory project.file('run/client')
-
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            workingDirectory file('run/client')
         }
 
         client2 {
-            parent runs.client
-            args '--username', 'Dev3'
-            arg "-mixin.config=${mod_id}.mixins.json"
+            workingDirectory file('run/client2')
 
-            workingDirectory project.file('run/client2')
+            arg '--username Dev3' //Dev3 is the female model
         }
 
         server {
-            workingDirectory project.file('run/server')
-            arg "-mixin.config=${mod_id}.mixins.json"
+            workingDirectory file('run/server')
 
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            args '--nogui'
+            arg '--nogui'
         }
 
         data {
-            workingDirectory project.file('run-data')
+            workingDirectory file('run-data')
 
             args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
         }
@@ -88,9 +84,9 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     maven {
-        url = "https://www.cursemaven.com"
+        url = 'https://www.cursemaven.com'
         content {
-            includeGroup "curse.maven"
+            includeGroup 'curse.maven'
         }
     }
     maven {
@@ -106,26 +102,24 @@ dependencies {
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("curse.maven:mine-mine-no-mi-78726:6049537")
     implementation fg.deobf('team.creative:player-revive:1.16.5')
     implementation fg.deobf('team.creative:creative-core:1.16.5')
+    implementation fg.deobf('curse.maven:mine-mine-no-mi-78726:6558607')
 }
 
 tasks.named('processResources', ProcessResources).configure {
     var replaceProperties = [
-            minecraft_version           : minecraft_version, 
-            minecraft_version_range     : minecraft_version_range,
-            forge_version               : forge_version, 
-            forge_version_range         : forge_version_range,
-            loader_version_range        : loader_version_range,
-            mod_id                      : mod_id, 
-            mod_name                    : mod_name, 
-            mod_license                 : mod_license, 
-            mod_version                 : mod_version,
-            mod_authors                 : mod_authors, 
-            mod_description             : mod_description, 
-            modrinth_changelog          : modrinth_changelog,
-            modrinth_version_type       : modrinth_version_type
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            forge_version          : forge_version,
+            forge_version_range    : forge_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description,
     ]
     inputs.properties replaceProperties
 
@@ -141,9 +135,9 @@ tasks.named('jar', Jar).configure {
                 'Specification-Vendor'    : mod_authors,
                 'Specification-Version'   : '1', // We are version 1 of ourselves
                 'Implementation-Title'    : project.name,
-                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Version'  : jar.archiveVersion,
                 'Implementation-Vendor'   : mod_authors,
-                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+                'Implementation-Timestamp': new SimpleDateFormat('yyyy-MM-dd\'T\'HH:mm:ssZ').format(new Date())
         ])
     }
     finalizedBy 'reobfJar'
@@ -166,108 +160,156 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
 
-// Quite the Monster i wrote here. Will improve with types and better structure soonTM
-// It works for my use case for now.
+/**********************  Custom stuff I wrote for automation  **********************/
 
-def updateChangelog(changelogMessage, changelogType, versionType, latestVersion, updateRecommended = false) {
-    def jsonFile = file('updates.json')
-    def jsonSlurper = new JsonSlurper()
-    def json = jsonSlurper.parse(jsonFile)
+enum ChangelogType {
+    PATCH, MINOR, MAJOR
+}
 
-    def versionChangelog = json.'1.16.5'
+enum VersionType {
+    release, alpha, beta
+}
 
-    def versionIncrement = changelogType.toUpperCase() == 'PATCH' ? 3 :
-                            changelogType.toUpperCase() == 'MINOR' ? 2 :
-                            changelogType.toUpperCase() == 'MAJOR' ? 1 : 0
+private void updateModVersion(String latestVersion, VersionType versionType) {
+    def gradlePropertiesFile = file('gradle.properties')
+    def gradleProperties = new Properties()
 
-    def newVersion = latestVersion.split("\\.").collect { it as Integer }
+    gradleProperties.load(new FileInputStream(gradlePropertiesFile))
+    gradleProperties.setProperty('mod_version', latestVersion)
+    gradleProperties.setProperty('upload_version_type', versionType.toString())
+    gradleProperties.store(gradlePropertiesFile.newWriter(), null)
 
-    if(versionIncrement == 2) {
-        newVersion[2] = 0
-    } else if (versionIncrement == 1) {
-        newVersion[1] = 0
-        newVersion[2] = 0
-    }
+    logger.lifecycle("Updated mod_version to ${latestVersion} and upload_version_type to ${versionType}")
+}
 
-    newVersion[versionIncrement - 1] += 1
-    newVersion = newVersion.collect { it.toString() }.join(".")
-
-    json.promos."1.16.5-latest" = newVersion
-    if(updateRecommended) {
-        json.promos."1.16.5-recommended" = newVersion
-    }
-    versionChangelog[newVersion] = changelogMessage
-
-    project.ext.mod_version = newVersion
+private void updateUploadChangelog(String latestVersion, VersionType versionType) {
+    String changelogFolder = "./changelogs"
+    String lookupName = "${changelogFolder}/${latestVersion.replace(".", "-")}-${versionType.toString()}.md"
+    File changelogFile = file(lookupName)
 
     def gradlePropertiesFile = file('gradle.properties')
     def gradleProperties = new Properties()
-    def changelog = readChangelogFile(newVersion, versionType)
 
     gradleProperties.load(new FileInputStream(gradlePropertiesFile))
-    gradleProperties.setProperty('mod_version', newVersion)
-    gradleProperties.setProperty('modrinth_version_type', versionType)
-    gradleProperties.setProperty('modrinth_changelog', changelog)
+    gradleProperties.setProperty('upload_changelog', changelogFile.text)
     gradleProperties.store(gradlePropertiesFile.newWriter(), null)
 
-    jsonFile.text = new JsonBuilder(json).toPrettyString()
-
-    println "Version: " + newVersion
-    println "Changelog" + changelog
 }
 
-def readChangelogFile(version, versionType) {
-    def changelogFileName = "changelogs/${version.replaceAll("\\.", "-")}-${versionType}.md"
-    def changelogFile = file(changelogFileName)
+private void addNewChangelogEntry(Object updateObject, String latestVersion, String changelogMessage) {
+    LazyMap changelogEntries = updateObject."${this.minecraft_version}"
+    changelogEntries.put(latestVersion, changelogMessage)
+    changelogEntries.sort()
 
-    if (changelogFile.exists()) {
-        return changelogFile.text
-    } else {
-        throw new GradleException("Changelog for version ${version}-${versionType} is missing!")
+    updateObject."${this.minecraft_version}" = changelogEntries
+}
+
+private void updatePromos(Object updateObject, ChangelogType changelogType, VersionType versionType) {
+    String latestVersion = updateObject.promos."${minecraft_version}-latest"
+
+    Integer latestVersionMajor = Integer.valueOf(latestVersion[0])
+    Integer latestVersionMinor = Integer.valueOf(latestVersion[2])
+    Integer latestVersionPatch = Integer.valueOf(latestVersion[4])
+
+    switch (changelogType) {
+        case ChangelogType.PATCH:
+            latestVersionPatch += 1
+            break
+        case ChangelogType.MINOR:
+            latestVersionMinor += 1
+            latestVersionPatch = 0
+            break
+        case ChangelogType.MAJOR:
+            latestVersionMajor += 1
+            latestVersionMinor = 0
+            latestVersionPatch = 0
+            break
+        default:
+            throw new IllegalArgumentException("Unknown changelog type: ${changelogType}")
+    }
+
+    String newVersion = "${latestVersionMajor}.${latestVersionMinor}.${latestVersionPatch}"
+    updateObject.promos."${minecraft_version}-latest" = newVersion
+    if (versionType == VersionType.release) {
+        updateObject.promos."${minecraft_version}-recommended" = newVersion
     }
 }
 
-tasks.register("updateInformation") {
+private String updateUpdatesJson(String changelogMessage, ChangelogType changelogType, VersionType versionType) {
+    logger.lifecycle("Reading changelog environment variable")
+    if (changelogMessage == null || changelogMessage.isEmpty()) {
+        throw new IllegalStateException("CHANGELOG_MESSAGE environment variable must be set")
+    }
+
+    logger.lifecycle("Reading updates.json file")
+    File updatesFile = file('updates.json')
+
+    JsonSlurper jsonSlurper = new JsonSlurper()
+    Object updateObject = jsonSlurper.parse(updatesFile)
+
+    logger.lifecycle("Updating promos")
+    this.updatePromos(updateObject, changelogType, versionType)
+
+    String latestVersion = updateObject.promos."${minecraft_version}-latest"
+    logger.lifecycle("Adding new changelog entry")
+    this.addNewChangelogEntry(updateObject, latestVersion, changelogMessage)
+
+    JsonBuilder jsonBuilder = new JsonBuilder(updateObject)
+    String jsonString = jsonBuilder.toPrettyString()
+    logger.lifecycle("Writing updates.json file")
+    updatesFile.text = jsonString
+    logger.lifecycle("Successfully updated updates.json with new version: ${latestVersion}")
+
+    return latestVersion
+}
+
+tasks.register('updateProperties') {
     doLast {
-        def versionType = System.getenv("VERSION_TYPE")
-        def changelogMessage = System.getenv("CHANGELOG_MESSAGE")
-        def changelogType = System.getenv("CHANGELOG_TYPE")
+        logger.lifecycle("Reading changelog from environment")
+        String changelogMessage = System.getenv('CHANGELOG_MESSAGE')
+        logger.lifecycle("Reading version type from environment")
+        VersionType versionType = VersionType.valueOf(System.getenv('VERSION_TYPE'))
+        logger.lifecycle("Reading changelog type from environment")
+        ChangelogType changelogType = ChangelogType.valueOf(System.getenv('CHANGELOG_TYPE'))
 
-        if ( versionType != null && 
-             changelogMessage != null && 
-             changelogType != null) {
+        logger.lifecycle("Updating updates.json with changelog message: ${changelogMessage}, changelog type: ${changelogType}, version type: ${versionType}")
+        String latestVersion = this.updateUpdatesJson(changelogMessage, changelogType, versionType)
 
-            def jsonFile = file("updates.json")
-            def jsonSlurper = new JsonSlurper()
-            def json = jsonSlurper.parse(jsonFile)
-            def versionChangelog = json.'1.16.5'
+        logger.lifecycle("Updating upload changelog")
+        this.updateUploadChangelog(latestVersion, versionType)
 
-            def latestVersion = versionChangelog.keySet().toList().sort().last()
-
-            if(versionType == "release") {
-                updateChangelog(changelogMessage, changelogType, versionType, latestVersion, true)
-            } else {
-                updateChangelog(changelogMessage, changelogType, versionType, latestVersion)
-            }
-        } else {
-            throw new GradleException("'changelogType', 'changelogMessage' and 'versionType' need to be set in the environment.")
-        }
+        logger.lifecycle("Updating mod version and type")
+        this.updateModVersion(latestVersion, versionType)
     }
 }
 
 modrinth {
-    token = System.getenv("MODRINTH_TOKEN")
-    projectId = "${mod_id}"
-    versionNumber = "${mod_version}"
-    versionType = "${modrinth_version_type}"
+    token = System.getenv('MODRINTH_TOKEN')
+    projectId = findProperty('mod_id').toString()
+    versionNumber = findProperty('mod_version').toString()
+    versionType = findProperty('upload_version_type').toString()
+    changelog = findProperty('upload_changelog').toString()
     uploadFile = jar
-    gameVersions = ["${minecraft_version}"]
-    changelog = "${modrinth_changelog}"
+    gameVersions = [minecraft_version.toString()]
+    syncBodyFrom = file('README.md').text
     dependencies {
-        required.project "playerrevive"
-        required.project "mine-mine-no-mi"
+        required.project 'playerrevive'
+        required.project 'mine-mine-no-mi'
     }
-    syncBodyFrom = rootProject.file("README.md").text
 }
-
 tasks.modrinth.dependsOn(tasks.modrinthSyncBody)
+
+tasks.register('publishCurseForge', TaskPublishCurseForge) {
+    apiToken = findProperty('curseforge_token')
+    projectId = findProperty('curseforge_id')
+
+    UploadArtifact mainFile = upload(projectId, jar)
+    mainFile.changelog = findProperty('upload_changelog')
+    mainFile.changelogType = 'markdown'
+    mainFile.releaseType = findProperty('upload_version_type')
+    mainFile.addRequirement('mine-mine-no-mi')
+    mainFile.addRequirement('playerrevive')
+    mainFile.addRequirement('creativecore')
+    mainFile.addGameVersion("${minecraft_version}")
+    mainFile.addModLoader('Forge')
+}
