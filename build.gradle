@@ -304,9 +304,8 @@ tasks.modrinth.dependsOn(tasks.modrinthSyncBody)
 
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
     apiToken = System.getenv('CURSEFORGE_TOKEN')
-    projectId = findProperty('curseforge_id')
 
-    UploadArtifact mainFile = upload(projectId, jar)
+    UploadArtifact mainFile = upload(findProperty('curseforge_id'), jar)
     mainFile.changelog = findProperty('upload_changelog')
     mainFile.changelogType = 'markdown'
     mainFile.releaseType = findProperty('upload_version_type')
