@@ -41,15 +41,14 @@ jobs:
 
       - name: Get dependencies
         run: |
-          echo We are in path $(pwd)
           cd libs
-          curl -Lo libs/creative-core-1.16.5.jar https://www.curseforge.com/api/v1/mods/257814/files/3419983/download
-          curl -Lo libs/player-revive-1.16.5.jar https://www.curseforge.com/api/v1/mods/266890/files/3419960/download
+          curl -Lo creative-core-1.16.5.jar https://www.curseforge.com/api/v1/mods/257814/files/3419983/download
+          curl -Lo player-revive-1.16.5.jar https://www.curseforge.com/api/v1/mods/266890/files/3419960/download
           cd ..
 
-      - name: Run ./gradlew updateInformation
+      - name: Run ./gradlew updateProperties
         run: |
-          ./gradlew updateInformation
+          ./gradlew updateProperties
         env:
           VERSION_TYPE: ${{ env.VERSION_TYPE }}
           CHANGELOG_MESSAGE: ${{ env.CHANGELOG_MESSAGE }}
