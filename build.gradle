@@ -46,8 +46,10 @@ minecraft {
 
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            // Hotswapping for Mixins
+            jvmArgs '-Xmx3G', '-XX:+AllowEnhancedClassRedefinition'
 
-            arg '-mixin.config=${mod_id}.mixins.json'
+            arg "-mixin.config=${mod_id}.mixins.json"
 
             mods {
                 "${mod_id}" {
@@ -63,7 +65,8 @@ minecraft {
         client2 {
             workingDirectory file('run/client2')
 
-            arg '--username Dev3' //Dev3 is the female model
+            args '--username', 'Dev3'
+            parent runs.client
         }
 
         server {
@@ -300,7 +303,7 @@ modrinth {
 tasks.modrinth.dependsOn(tasks.modrinthSyncBody)
 
 tasks.register('publishCurseForge', TaskPublishCurseForge) {
-    apiToken = findProperty('curseforge_token')
+    apiToken = System.getenv('CURSEFORGE_TOKEN')
     projectId = findProperty('curseforge_id')
 
     UploadArtifact mainFile = upload(projectId, jar)

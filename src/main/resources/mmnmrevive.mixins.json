@@ -1,17 +1,19 @@
 {
-    "required": true,
-    "mixins": [],
-    "package": "net.hammerclock.mmnmrevive.mixins",
-    "server": [
-        "ConfigurableBleedOutInChallengeDimensionMixin"
-    ],
-    "client": [
-        "MultiplayerAllowMixin"
-    ],
-    "injectors": {
-        "defaultRequire": 1
-    },
-    "compatibilityLevel": "JAVA_8",
-    "minVersion": "0.8",
-    "refmap": "mmnmrevive.refmap.json"
+  "required": true,
+  "mixins": [
+  ],
+  "package": "net.hammerclock.mmnmrevive.mixins",
+  "server": [
+    "DeathInChallengeFixMixin"
+  ],
+  "client": [
+    "CompatKnockdown",
+    "MultiplayerAllowMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "compatibilityLevel": "JAVA_8",
+  "minVersion": "0.8",
+  "refmap": "mmnmrevive.refmap.json"
 }

@@ -1,0 +1,5 @@
+{
+  "mmnmrevive.gui.hold_to_carry": "Hold %s to carry",
+  "mmnmrevive.gui.carry_fail": "You cannot carry the player!",
+  "mmnmrevive.no_revive_in_room": "You cannot revive a player in ROOM!"
+}
