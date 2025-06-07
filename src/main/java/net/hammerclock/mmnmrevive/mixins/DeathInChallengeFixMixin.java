@@ -18,7 +18,7 @@ abstract class DeathInChallengeFixMixin {
 
     @Inject(method = "playerDied", at = @At("HEAD"), cancellable = true, remap = false)
     public void mmnmrevive$playerDied(LivingDeathEvent event, CallbackInfo ci) {
-        if (!CommonConfig.INSTANCE.isReviveAllowedInChallenge()) ci.cancel();
+        if (!CommonConfig.INSTANCE.isReviveAllowedInChallenge() && WyHelper.isInChallengeDimension(event.getEntity().level)) ci.cancel();
     }
 
     @Inject(method = "playerTick", at = @At(value = "INVOKE", target = "Lteam/creative/playerrevive/server/PlayerReviveServer;kill(Lnet/minecraft/entity/player/PlayerEntity;)V"), cancellable = true, remap = false)

@@ -42,7 +42,7 @@ public class CommonConfig {
     public CommonConfig(ForgeConfigSpec.Builder builder) {
         this.reviveAllowedInChallenge = builder
                 .comment("If false will respawn players normally back into the overworld. If true will allow players to revive others in challenge dimensions")
-                .define("Allow reviving in challenge dimensions ", false);
+                .define("Allow reviving in challenge dimensions", false);
 
         this.enableStrawDollReturn = builder
                 .comment("Will remove the strawdoll of a player when they are bleeding out opposed to them having to fully die")

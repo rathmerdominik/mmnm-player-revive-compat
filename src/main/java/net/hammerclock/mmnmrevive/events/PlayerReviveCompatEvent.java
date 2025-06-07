@@ -18,6 +18,8 @@ import net.minecraftforge.fml.common.Mod;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import team.creative.playerrevive.PlayerRevive;
+import team.creative.playerrevive.PlayerReviveConfig;
 import team.creative.playerrevive.api.event.PlayerBleedOutEvent;
 import team.creative.playerrevive.api.event.PlayerRevivedEvent;
 import team.creative.playerrevive.server.PlayerReviveServer;
@@ -101,7 +103,7 @@ public class PlayerReviveCompatEvent {
                 AbilityHelper.disableAbilities(player, Integer.MAX_VALUE, abl -> true);
 
                 if (CommonConfig.INSTANCE.isGiveKnockdownEffect() && !player.hasEffect(ModEffects.UNCONSCIOUS.get())) {
-                    player.addEffect(new EffectInstance(ModEffects.UNCONSCIOUS.get(), 1800, 1));
+                    player.addEffect(new EffectInstance(ModEffects.UNCONSCIOUS.get(), PlayerRevive.CONFIG.bleedTime, 1));
                 }
             }
         }

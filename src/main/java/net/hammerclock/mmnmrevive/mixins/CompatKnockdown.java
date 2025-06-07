@@ -23,6 +23,8 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 import team.creative.playerrevive.api.IBleeding;
 import team.creative.playerrevive.client.ReviveEventClient;
 import xyz.pixelatedw.mineminenomi.ModMain;
+import xyz.pixelatedw.mineminenomi.api.effects.ModEffect;
+import xyz.pixelatedw.mineminenomi.init.ModEffects;
 
 import java.util.List;
 
@@ -77,9 +79,45 @@ abstract class CompatKnockdown {
         matrixStack.popPose();
     }
 
-    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lteam/creative/playerrevive/server/PlayerReviveServer;getBleeding(Lnet/minecraft/entity/player/PlayerEntity;)Lteam/creative/playerrevive/api/IBleeding;", shift = At.Shift.AFTER, ordinal = 1), locals = LocalCapture.CAPTURE_FAILHARD, remap = false)
+    @Inject(method = "playerTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerEntity;setPose(Lnet/minecraft/entity/Pose;)V"), remap = false, cancellable = true)
+    public void mmnmrevive$fixSwimmingPose(TickEvent.PlayerTickEvent event, CallbackInfo ci){
+        if(event.player.hasEffect(ModEffects.UNCONSCIOUS.get())) ci.cancel();
+    }
+
+    @Inject(
+            method = "tick",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/entity/player/PlayerEntity;setPose(Lnet/minecraft/entity/Pose;)V"
+            ),
+            locals = LocalCapture.CAPTURE_FAILHARD,
+            remap = false,
+            cancellable = true
+    )
+    private void mmnmrevive$preventPoseSetIfUnconscious(
+            net.minecraftforge.event.TickEvent.RenderTickEvent event, // Original method's first parameter
+            CallbackInfo ci,
+            PlayerEntity player,
+            IBleeding revive
+    ){
+        if (player.hasEffect(ModEffects.UNCONSCIOUS.get())) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(
+            method = "tick",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lteam/creative/playerrevive/server/PlayerReviveServer;getBleeding(Lnet/minecraft/entity/player/PlayerEntity;)Lteam/creative/playerrevive/api/IBleeding;",
+                    shift = At.Shift.AFTER,
+                    ordinal = 1
+            ),
+            locals = LocalCapture.CAPTURE_FAILHARD,
+            remap = false
+    )
     public void mmnmrevive$tickHandleCustomKnockdownHud(TickEvent.RenderTickEvent renderTickEvent, CallbackInfo ci, PlayerEntity player, IBleeding revive, PlayerEntity revivingPlayer, List<ITextComponent> list) {
-        if (!CommonConfig.INSTANCE.isGiveKnockdownEffect()) {
+        if (!player.hasEffect((ModEffects.UNCONSCIOUS.get()))) {
             return;
         }
 
